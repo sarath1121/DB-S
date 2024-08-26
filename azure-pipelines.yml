@@ -1,0 +1,43 @@
+trigger:
+  branches:
+    include:
+      - dev
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: echo "Preparing to create a PR..."
+  displayName: 'Preparation Step'
+
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Install jq for JSON parsing
+      sudo apt-get install jq -y
+
+      # Define variables
+      REPO_NAME="ss"
+      ORG_NAME="sarathsharma1121"
+      ACCESS_TOKEN=$(System.AccessToken)
+      SOURCE_BRANCH="dev"
+      TARGET_BRANCH="master"
+      PR_TITLE="Auto-merge: $SOURCE_BRANCH to $TARGET_BRANCH"
+      PR_DESCRIPTION="This PR was automatically created by Azure Pipelines."
+
+      # Create the PR using GitHub or Azure DevOps API
+      curl -X POST \
+      -H "Authorization: Bearer $ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "title": "'"$PR_TITLE"'",
+        "description": "'"$PR_DESCRIPTION"'",
+        "sourceRefName": "refs/heads/'"$SOURCE_BRANCH"'",
+        "targetRefName": "refs/heads/'"$TARGET_BRANCH"'",
+        "completionOptions": {
+          "deleteSourceBranch": true
+        }
+      }' \
+      https://dev.azure.com/$ORG_NAME/ss/_apis/git/repositories/ss/pullrequests?api-version=6.0
+  displayName: 'Create PR from Dev to Master'
